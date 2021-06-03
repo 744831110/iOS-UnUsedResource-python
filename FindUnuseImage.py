@@ -1,7 +1,8 @@
 import sys
 import os
 import re
-from ResourceFileInfo import ResourceFileInfo
+from typing import List
+from resourceFileInfo import ResourceFileInfo
 
 projectpath = sys.argv[1]
 # 需要忽略搜索图片的文件夹
@@ -17,7 +18,12 @@ imageNameSet = set()
 # 无用图片info
 unusedArray = []
 
+# 可以压缩的图片路径 array
+compressArray = []
+
 # 搜索给定文件名下的各个文件，并匹配正则，存储结果
+
+
 def searchImageName(filePath, imageSet):
     for file_path in os.listdir(filePath):
         path = os.path.join(filePath, file_path)
@@ -29,14 +35,15 @@ def searchImageName(filePath, imageSet):
                 content = file.read()
                 file.close()
                 suffix = path.split(".")
-                if len(suffix)>=2 and suffix[1] in regexDic:
+                if len(suffix) >= 2 and suffix[1] in regexDic:
                     regex = regexDic[suffix[1]]
                     pattern = re.compile(regex)
                     result = pattern.findall(content)
                     for imageName in result:
                         imageSet.add(imageName)
 
-def isImageSetUnUsed(info:ResourceFileInfo, resourceSuffixs:[], imageNameSet:set):
+
+def isImageSetUnUsed(info: ResourceFileInfo, resourceSuffixs: list, imageNameSet: set):
     fileList = os.listdir(info.path)
     for file in fileList:
         splitArray = file.split(".")
@@ -49,12 +56,16 @@ def isImageSetUnUsed(info:ResourceFileInfo, resourceSuffixs:[], imageNameSet:set
                 return True
     return False
 
-def isInImageSet(info:ResourceFileInfo):
-    isImageSet = (info.suffix == "imageset" or info.suffix == "appiconset" or info.suffix == "launchimage")
-    pathContinaerSuffix = info.path.find("imageset")!=-1 or info.path.find("appiconset")!=-1 or info.path.find("launchimage")!=-1
+
+def isInImageSet(info: ResourceFileInfo):
+    isImageSet = (info.suffix == "imageset" or info.suffix ==
+                  "appiconset" or info.suffix == "launchimage")
+    pathContinaerSuffix = info.path.find("imageset") != -1 or info.path.find(
+        "appiconset") != -1 or info.path.find("launchimage") != -1
     if not isImageSet and pathContinaerSuffix:
         return True
     return False
+
 
 # 检索所有的图片文件
 for suffix in resourceSuffixs:
@@ -68,11 +79,13 @@ for suffix in resourceSuffixs:
                 imageInfoDic[info.name] = info
 
 # 初始化正则
-fileSuffixs = ["h", "m", "mm", "swift", "xib", "storyboard", "strings", "c", "cpp", "html", "js", "json", "plist", "css"]
+fileSuffixs = ["h", "m", "mm", "swift", "xib", "storyboard",
+               "strings", "c", "cpp", "html", "js", "json", "plist", "css"]
 cRegex = "([a-zA-Z0-9_-]*)\\.(" + "|".join(resourceSuffixs) + ")"
 objcRegex = "@\"(.*?)\""
 xibRegex = "image name=\"(.+?)\""
-fileRegex = [cRegex, objcRegex, objcRegex, "\"(.*?)\"", xibRegex, xibRegex, "=\\s*\"(.*)\"\\s*;", cRegex, cRegex, "img\\s+src=[\"\'](.*?)[\"\']", "[\"\']src[\"\'],\\s+[\"\'](.*?)[\"\']", ":\\s*\"(.*?)\"", ">(.*?)<", cRegex]
+fileRegex = [cRegex, objcRegex, objcRegex, "\"(.*?)\"", xibRegex, xibRegex, "=\\s*\"(.*)\"\\s*;", cRegex, cRegex,
+             "img\\s+src=[\"\'](.*?)[\"\']", "[\"\']src[\"\'],\\s+[\"\'](.*?)[\"\']", ":\\s*\"(.*?)\"", ">(.*?)<", cRegex]
 for i in range(0, len(fileSuffixs)-1):
     regexDic[fileSuffixs[i]] = fileRegex[i]
 
@@ -84,7 +97,7 @@ for key in imageInfoDic.keys():
         if info.isDir:
             if not isImageSetUnUsed(info, resourceSuffixs, imageNameSet):
                 unusedArray.append(info)
-        else :
+        else:
             unusedArray.append(info)
 
 for info in unusedArray:
