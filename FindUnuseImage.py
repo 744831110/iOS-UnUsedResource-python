@@ -1,14 +1,15 @@
+from PIL import Image
+from dHash import DHash
 import sys
 import os
 import re
 from typing import List
 from resourceFileInfo import ResourceFileInfo
 
-projectpath = sys.argv[1]
+# 需要把教师端和学生的路径都传进来
+
 # 需要忽略搜索图片的文件夹
 excludeFolders = []
-# 需要搜索的文件路径
-resourceSuffixs = ["imageset", "jpg", "gif", "png"]
 # 图片文件
 imageInfoDic = {}
 # 匹配各个文件夹的正则
@@ -17,13 +18,9 @@ regexDic = {}
 imageNameSet = set()
 # 无用图片info
 unusedArray = []
-
-# 可以压缩的图片路径 array
-compressArray = []
+resourceSuffixs = ["jpg", "png"]
 
 # 搜索给定文件名下的各个文件，并匹配正则，存储结果
-
-
 def searchImageName(filePath, imageSet):
     for file_path in os.listdir(filePath):
         path = os.path.join(filePath, file_path)
@@ -66,39 +63,53 @@ def isInImageSet(info: ResourceFileInfo):
         return True
     return False
 
-
-# 检索所有的图片文件
-for suffix in resourceSuffixs:
-    command = "/usr/bin/find " + projectpath + " -name *." + suffix
-    results = os.popen(command).read().splitlines()
+def findUnuseImage(results, projectPath):
     for result in results:
         info = ResourceFileInfo(result)
         if not isInImageSet(info) and result.find(".bundle") == -1:
-            # imageset 和 imageSet里的图片不会重复
             if not info.name in imageInfoDic:
                 imageInfoDic[info.name] = info
 
-# 初始化正则
-fileSuffixs = ["h", "m", "mm", "swift", "xib", "storyboard",
-               "strings", "c", "cpp", "html", "js", "json", "plist", "css"]
-cRegex = "([a-zA-Z0-9_-]*)\\.(" + "|".join(resourceSuffixs) + ")"
-objcRegex = "@\"(.*?)\""
-xibRegex = "image name=\"(.+?)\""
-fileRegex = [cRegex, objcRegex, objcRegex, "\"(.*?)\"", xibRegex, xibRegex, "=\\s*\"(.*)\"\\s*;", cRegex, cRegex,
-             "img\\s+src=[\"\'](.*?)[\"\']", "[\"\']src[\"\'],\\s+[\"\'](.*?)[\"\']", ":\\s*\"(.*?)\"", ">(.*?)<", cRegex]
-for i in range(0, len(fileSuffixs)-1):
-    regexDic[fileSuffixs[i]] = fileRegex[i]
+    # 初始化正则
+    fileSuffixs = ["h", "m", "mm", "swift", "xib", "storyboard", "strings", "c", "cpp", "html", "js", "json", "plist", "css"]
 
-searchImageName(projectpath, imageNameSet)
+    cRegex = "([a-zA-Z0-9_-]*)\\.(" + "|".join(resourceSuffixs) + ")"
 
-for key in imageInfoDic.keys():
-    info = imageInfoDic[key]
-    if not info.name in imageNameSet:
-        if info.isDir:
-            if not isImageSetUnUsed(info, resourceSuffixs, imageNameSet):
+    objcRegex = "@\"(.*?)\""
+
+    xibRegex = "image name=\"(.+?)\""
+
+    fileRegex = [cRegex, objcRegex, objcRegex, "\"(.*?)\"", xibRegex, xibRegex, "=\\s*\"(.*)\"\\s*;", cRegex, cRegex,"img\\s+src=[\"\'](.*?)[\"\']", "[\"\']src[\"\'],\\s+[\"\'](.*?)[\"\']", ":\\s*\"(.*?)\"", ">(.*?)<", cRegex]
+
+    for i in range(0, len(fileSuffixs)-1):
+        regexDic[fileSuffixs[i]] = fileRegex[i]
+    searchImageName(projectPath, imageNameSet)
+    for key in imageInfoDic.keys():
+        info = imageInfoDic[key]
+        if not info.name in imageNameSet:
+            if info.isDir:
+                if not isImageSetUnUsed(info, resourceSuffixs, imageNameSet):
+                    unusedArray.append(info)
+            else:
                 unusedArray.append(info)
-        else:
-            unusedArray.append(info)
+    for info in unusedArray:
+        info.describe()
 
-for info in unusedArray:
-    print(info.nameWithSuffix)
+def findRepeatImage(results, projectPath):
+    #dhash dic
+    dHashDic = {}
+    repeatImage = []
+    for result in results:
+        info = ResourceFileInfo(result)
+        if info.suffix in resourceSuffixs and info.name not in dHashDic.keys():
+            dHashDic[info.name] = DHash.calculate_hash(Image.open(info.path))
+    
+    for key, value in dHashDic.items():
+        for otherKey, otherValue in dHashDic.items():
+            if key == otherKey:
+                continue
+            if DHash.hamming_distance(value, otherValue) <= 5:
+                repeatImage.append((key, otherKey))
+                
+    for t in repeatImage:
+        print(t[0] + " and " + t[1])

@@ -92,7 +92,7 @@ def class_symbols(path):
     return symbols
 
 
-def filter_super_class(unref_symbols):
+def filter_super_class(unref_symbols, path):
     re_subclass_name = re.compile("\w{16} 0x\w{9} _OBJC_CLASS_\$_(.+)")
     re_superclass_name = re.compile(
         "\s*superclass 0x\w{9} _OBJC_CLASS_\$_(.+)")
@@ -141,10 +141,10 @@ def class_unref_symbols(path, reserved_prefix, filter_prefix):
             unref_symbols.add(unref_symbol)
     if len(unref_symbols) == 0:
         exit('Finish:class unref null')
-    return filter_super_class(unref_symbols)
+    return filter_super_class(unref_symbols, path)
 
 
-if __name__ == '__main__':
+def findUnuseClass(projectPath):
     # path = input('Please input app path\nFor example:/Users/yuencong/Library/Developer/Xcode/DerivedData/***/Build/Products/Dev-iphoneos/***.app\n').strip()
     path = "/Users/chenqian/Library/Developer/Xcode/DerivedData/TeacheeMaster-cytqbtauywijmlbnoypgmsbuqxhm/Build/Products/Debug-iphoneos/TeacheePro.app"
     path = verified_app_path(path)
