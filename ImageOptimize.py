@@ -13,7 +13,7 @@ deleteArray = []
 
 def __deleteAllCompressImage():
     for suffix in resourceSuffixs:
-        command = "/usr/bin/find " + projectpath + " -name *." + suffix
+        command = "/usr/bin/find" + projectpath + " -name *." + suffix
         results = os.popen(command).read().splitlines()
         for result in results:
             info = ResourceFileInfo(result)
@@ -25,18 +25,21 @@ def __deleteAllCompressImage():
 def deleteLowMultipleImage(results):
     for result in results:
         info = ResourceFileInfo(result)
-        dirList = info.path.split("/")
-        if len(dirList) >= 2:
-            dicName = dirList[-2]
-            if ".imageset" in dicName and info.fileName == dicName.replace(".imageset", ""):
-                os.remove(info.path)
-                deleteArray.append(info.path)
+        if "/Pods/" not in info.path and "AppIcon" not in info.path and info.suffix == "imageset":
+            files = []
+            for dirpath, dirnames, tempfiles in os.walk(info.path):
+                files = tempfiles
+            for suffix in resourceSuffixs:
+                deleteFileName = info.name+"."+suffix
+                if deleteFileName in files:
+                    print(info.path)
 
 
 def compressImage(results):
     for result in results:
         info = ResourceFileInfo(result)
         if info.suffix == "png" or info.suffix == "jpg":
+            # 只对ASImage.xcassets下的进行压缩
             if info.path.find("./Pods") == -1 and info.path.find("AppIcon.appiconset") == -1 and info.path.find("AppIcon") == -1 and compressSuffix not in info.path:
                 compressArray.append(info)
         progress = ProgressBar(len(compressArray), fmt=ProgressBar.FULL)
@@ -55,9 +58,9 @@ def __compress(imagePath):
     pathList[-2] = pathList[-2] + compressSuffix
     newPath = ".".join(pathList)
     # 先复制一个做比较，可不要这行
-    shutil.copyfile(imagePath, newPath)
+    # shutil.copyfile(imagePath, newPath)
     lines = os.popen('imageoptim -Q --no-imageoptim --imagealpha --number-of-colors 150 --quality 70-100 %s' %
-                     newPath).readlines()
+                     imagePath).readlines()
     print(lines)
 
 

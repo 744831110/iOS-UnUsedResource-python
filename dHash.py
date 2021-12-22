@@ -1,4 +1,4 @@
-
+from PIL import Image
 class DHash(object):
     @staticmethod
     def calculate_hash(image):
